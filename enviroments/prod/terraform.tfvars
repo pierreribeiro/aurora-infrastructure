@@ -1,77 +1,61 @@
-variable "cluster_name" {
-  description = "Name of the Aurora cluster"
-  type        = string
-}
+# Cluster configuration
+cluster_name    = "ecommerce-prod"
+engine          = "aurora-mysql"
+engine_version  = "8.0.mysql_aurora.3.02.0"
+database_name   = "ecommerce"
+master_username = "admin"
 
-variable "engine" {
-  description = "Aurora engine type"
-  type        = string
-  default     = "aurora-mysql"
-  
-  validation {
-    condition     = contains(["aurora-mysql", "aurora-postgresql"], var.engine)
-    error_message = "Engine must be either aurora-mysql or aurora-postgresql"
+# Network
+vpc_id     = "vpc-12345678"
+subnet_ids = ["subnet-11111111", "subnet-22222222", "subnet-33333333"]
+allowed_cidr_blocks = ["10.0.0.0/16"]
+
+# Instances
+instances = {
+  "ecommerce-prod-writer" = {
+    instance_class               = "db.r6g.2xlarge"
+    performance_insights_enabled = true
+    monitoring_interval         = 60
+    promotion_tier              = 0
+  }
+  "ecommerce-prod-reader-1" = {
+    instance_class               = "db.r6g.xlarge"
+    performance_insights_enabled = true
+    monitoring_interval         = 60
+    promotion_tier              = 1
+  }
+  "ecommerce-prod-reader-2" = {
+    instance_class               = "db.r6g.xlarge"
+    performance_insights_enabled = true
+    monitoring_interval         = 60
+    promotion_tier              = 2
   }
 }
 
-variable "engine_version" {
-  description = "Aurora engine version"
-  type        = string
-}
+# Backup
+backup_retention_period = 35
+backup_window          = "03:00-04:00"
+maintenance_window     = "sun:04:00-sun:05:00"
 
-variable "engine_mode" {
-  description = "Aurora engine mode"
-  type        = string
-  default     = "provisioned"
-  
-  validation {
-    condition     = contains(["provisioned", "serverless"], var.engine_mode)
-    error_message = "Engine mode must be either provisioned or serverless"
-  }
-}
+# Security
+deletion_protection = true
+skip_final_snapshot = false
 
-variable "instances" {
-  description = "Map of cluster instances and their configuration"
-  type = map(object({
-    instance_class               = string
-    performance_insights_enabled = bool
-    monitoring_interval         = number
-    promotion_tier             = number
-  }))
-  
-  default = {
-    writer = {
-      instance_class               = "db.r6g.large"
-      performance_insights_enabled = true
-      monitoring_interval         = 60
-      promotion_tier              = 0
-    }
-  }
-}
+# Auto Scaling
+enable_autoscaling         = true
+autoscaling_min_capacity   = 2
+autoscaling_max_capacity   = 5
+autoscaling_cpu_target     = 70
 
-variable "serverlessv2_scaling_configuration" {
-  description = "Serverless v2 scaling configuration"
-  type = object({
-    max_capacity = number
-    min_capacity = number
-  })
-  default = null
-}
+# Monitoring
+alarm_cpu_threshold         = 80
+alarm_connections_threshold = 900
+alarm_sns_topics           = ["arn:aws:sns:us-east-1:123456789012:dba-alerts"]
 
-variable "vpc_id" {
-  description = "VPC ID where the cluster will be created"
-  type        = string
+# Tags
+tags = {
+  Environment = "production"
+  Application = "ecommerce"
+  ManagedBy   = "terraform"
+  CostCenter  = "engineering"
 }
-
-variable "subnet_ids" {
-  description = "List of subnet IDs for the DB subnet group"
-  type        = list(string)
-}
-
-variable "allowed_cidr_blocks" {
-  description = "List of CIDR blocks allowed to connect to the cluster"
-  type        = list(string)
-  default     = []
-}
-
-# ... mais variáveis ...
